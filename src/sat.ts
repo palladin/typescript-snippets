@@ -60,14 +60,20 @@ namespace Snippet2 {
     type MapVarsToTuple<TVars> = 
         [TVars] extends [never] ? [] : 
             LastVar<MapVarsToLookup<TVars>> extends infer TVar ? 
-                [keyof TVar, ...MapVarsToTuple<Exclude<TVars, TVar>>] 
+                [keyof TVar, ...MapVarsToTuple<Exclude<TVars, keyof TVar>>] 
             : never
 
-    type fsfdfsdfsfds = Evals<And<Var<"x">, Not<Var<"y">>>, AllCombinations<["x", "y"]>>
+    type Sat<TExpr extends BoolExpr> = 
+        CollectVars<TExpr> extends infer TVars ? 
+            MapVarsToTuple<TVars> extends infer TVars ?
+                TVars extends string[] ? Evals<TExpr, AllCombinations<TVars>> : never
+            : never
+        : never
 
-    type fsdfdsf = MapVarsToLookup<CollectVars<And<Var<"x">, Not<Var<"y">>>>>
-   
-    type sfsfsdfs = MapVarsToTuple<"x" | "y"> //LastVar<MapVarsToLookup<"x" | "y">>
+    type Test0 = Sat<And<Var<"x">, Not<Var<"y">>>>
+    type Test1 = Sat<And<Var<"x">, Not<Var<"x">>>>
+    type Test2 = Sat<Or<Var<"x">, Not<Var<"x">>>>
+
 
 }
 
