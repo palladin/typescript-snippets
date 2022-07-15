@@ -24,5 +24,5 @@ module Snippet5 {
         return begin(k => setTimeout(() => k(v), d))
     }
 
-    delay(42, 5000).value(x => console.log(x))
+    delay(41, 5000).then(x => delay(x + 1, 5000)).value(x => console.log(x))
 }
