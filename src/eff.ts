@@ -20,13 +20,14 @@ interface Prompt extends Effect<string> {
     msg: string
 }
 
+function* effect<TResult, TEffect extends Effect<TResult>>(effect: TEffect): Generator<TEffect, TResult, any> {
+    return yield effect;
+} 
+
 function log(msg: string): Generator<Log, void> {
     return effect({ type: "log", msg: msg });
 }
 
-function* effect<TResult, TEffect extends Effect<TResult>>(effect: TEffect): Generator<TEffect, TResult, any> {
-    return yield effect;
-} 
 function rand(min: number, max: number): Generator<Rand, number>  {
     return effect({ type: "rand", min: min, max: max });
 }
