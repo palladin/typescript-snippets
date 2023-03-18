@@ -21,7 +21,7 @@ interface Prompt extends Effect<string> {
     msg: string
 }
 
-
+<<<<<<< HEAD
 interface PromiseEffect extends Effect<unknown> {
     type: "promise"
     promise: Promise<unknown>
@@ -35,6 +35,16 @@ function log(msg: string): Generator<Log, void> {
     return effect({ type: "log", msg: msg });
 }
 
+=======
+function* effect<TResult, TEffect extends Effect<TResult>>(effect: TEffect): Generator<TEffect, TResult, any> {
+    return yield effect;
+} 
+
+function log(msg: string): Generator<Log, void> {
+    return effect({ type: "log", msg: msg });
+}
+
+>>>>>>> b0dc7fdb3f8967d67f4403772088e35f197673dd
 function rand(min: number, max: number): Generator<Rand, number>  {
     return effect({ type: "rand", min: min, max: max });
 }

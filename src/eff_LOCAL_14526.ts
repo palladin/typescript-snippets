@@ -21,7 +21,6 @@ interface Prompt extends Effect<string> {
     msg: string
 }
 
-
 interface PromiseEffect extends Effect<unknown> {
     type: "promise"
     promise: Promise<unknown>
