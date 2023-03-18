@@ -1,5 +1,6 @@
 import readline  from "readline";
 
+
 interface Effect<TResult> {
     type: string
 }
@@ -20,13 +21,19 @@ interface Prompt extends Effect<string> {
     msg: string
 }
 
-function log(msg: string): Generator<Log, void> {
-    return effect({ type: "log", msg: msg });
+interface PromiseEffect extends Effect<unknown> {
+    type: "promise"
+    promise: Promise<unknown>
 }
 
 function* effect<TResult, TEffect extends Effect<TResult>>(effect: TEffect): Generator<TEffect, TResult, any> {
     return yield effect;
-} 
+}
+
+function log(msg: string): Generator<Log, void> {
+    return effect({ type: "log", msg: msg });
+}
+
 function rand(min: number, max: number): Generator<Rand, number>  {
     return effect({ type: "rand", min: min, max: max });
 }
@@ -88,12 +95,86 @@ function run(iter: Generator<Log | Rand | Prompt, void>) {
 
 }
 
-
-
-const iter = guessGame();
-run(iter).then(x => console.log(x));
-
+//const iter = guessGame();
+//run(iter).then(x => console.log(x));
 
 
 
+function* randHandler<TResult, TEffect extends Effect<TResult>>(iter: Generator<Rand | TEffect, void>): Generator<TEffect, void> {
+    let result = iter.next();
+    while (!result.done) {
+        const effect = result.value;
+        if (effect.type === "rand") {
+            const randEffect = effect as Rand;
+            const randValue = Math.floor(Math.random() * randEffect.max) + randEffect.min;
+            result = iter.next(randValue);
+        }
+        else {
+            const value = yield effect as TEffect;
+            result = iter.next(value);
+        }
+    }
+}
 
+function* logHandler<TResult, TEffect extends Effect<TResult>>(iter: Generator<Log | TEffect, void>): Generator<TEffect, void> {
+    let result = iter.next();
+    while (!result.done) {
+        const effect = result.value;
+        if (effect.type === "log") {
+            const logEffect = effect as Log;
+            console.log(logEffect.msg);
+            result = iter.next();
+        }
+        else {
+            const value = yield effect as TEffect;
+            result = iter.next(value);
+        }
+    }
+}
+
+function* promptHandler<TResult, TEffect extends Effect<TResult>>(iter: Generator<Prompt | TEffect, void>): Generator<PromiseEffect | TEffect, void> {
+
+    let result = iter.next();
+    while (!result.done) {
+        const effect = result.value;
+        if (effect.type === "prompt") {
+            const promptEffect = effect as Prompt;
+            function prompt(msg: string): Promise<string> {
+                return new Promise((resolve, reject) => {
+                    const input = readline.createInterface({
+                        input: process.stdin,
+                        output: process.stdout,
+                    });
+                        
+                    input.question(msg,  (value) => {
+                        input.close();         
+                        resolve(value);
+                    });
+                });
+            }
+            const promise = prompt(promptEffect.msg);
+            const value = yield { type: "promise", promise: promise } as PromiseEffect;
+            result = iter.next(value);
+        }
+        else {
+            const value = yield effect as TEffect;
+            result = iter.next(value);
+        }
+    }
+}
+
+async function runHandler(iter: Generator<PromiseEffect, void>): Promise<void> {
+    let result = iter.next();
+    while (!result.done) {
+        const effect = result.value;
+        if (effect.type === "promise") {
+            const value = await effect.promise;
+            result = iter.next(value);
+        }
+        else
+            throw new Error(`invalid effect ${effect.type}`);
+    }
+}
+
+
+runHandler(logHandler(randHandler(promptHandler(guessGame()))));
